@@ -107,9 +107,12 @@ def _amount_near_total_label(lines: List[str], index: int) -> Optional[int]:
         neighbor_index = index + offset
         if not 0 <= neighbor_index < len(lines):
             continue
-        neighbor = re.sub(r"\b(?:rp|idr)\b", "", lines[neighbor_index], flags=re.IGNORECASE)
+        original = lines[neighbor_index].strip()
+        has_currency = bool(re.match(r"^(?:rp\b|idr\b)", original, re.IGNORECASE))
+        has_payment_marker = bool(re.search(r"\b(?:tunai|cash|lunas)\b", original, re.IGNORECASE))
+        neighbor = re.sub(r"\b(?:rp|idr)\b", "", original, flags=re.IGNORECASE)
         neighbor = re.sub(r"\s*([.,])\s*", r"\1", neighbor).strip(" :|-")
-        if re.fullmatch(r"[\d.,\s]+", neighbor):
+        if re.fullmatch(r"[\d.,\s]+", neighbor) or has_currency or has_payment_marker:
             amount = parse_amounts(neighbor)
             if amount is not None:
                 return amount
@@ -237,6 +240,16 @@ def score_total_candidate(lines: List[str], total: Optional[int]) -> int:
                 if amount == total:
                     return 70
                 if re.search(r"[a-zA-Z]", value_line):
+                    break
+
+        # The OCR may drop the word DISKON but preserve its parenthesized
+        # amount immediately before the printed grand total.
+        if re.fullmatch(r"\s*\(\s*[\d.,\s]+\s*\)\s*", line):
+            for value_line in lines[index + 1:index + 3]:
+                if re.fullmatch(r"\s*(?:rp\s*)?[\d.,]+\s*", value_line, re.IGNORECASE):
+                    if _clean_number(value_line) == total:
+                        return 70
+                elif re.search(r"[a-zA-Z]", value_line):
                     break
 
     return 20 if has_total_label else 10

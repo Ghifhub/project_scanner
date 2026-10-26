@@ -330,7 +330,7 @@ if page == "Scan Struk":
     )
 
     use_binarized = st.checkbox(
-        "Bandingkan OCR binarized (adaptive + Otsu; hasil dipilih otomatis)",
+        "Pakai OCR binarized (adaptive; Otsu dipakai jika hasil awal kurang yakin)",
         value=False,
     )
 
@@ -358,6 +358,10 @@ if page == "Scan Struk":
                         "parsed": parsed,
                         "total_score": score_total_candidate(lines, parsed.total),
                     })
+                    # Most receipts are handled in one OCR pass. Pay for the
+                    # alternate threshold only when a date or supported total is missing.
+                    if parsed.date and variant_results[-1]["total_score"] >= 60:
+                        break
                 if not variant_results:
                     raise ValueError("Gambar tidak menghasilkan teks OCR.")
 
