@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite
+*.sqlite3
+report_sample/
+samples/*.jpg
+.streamlit/secrets.toml
+.DS_Store
+
+# Local receipt photos can contain personal purchase details
+Struk Belanja/
